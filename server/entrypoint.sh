@@ -8,7 +8,7 @@ log() {
 
 # Check that we have some kind of password for the root user.
 if [ -z "${DEVPI_PASSWORD}" ]; then
-    log "ERROR" "Root password cannot be empty"
+    log "ERROR" "Root password cannot be empty. set DEVPI_PASSWORD environment variable."
     exit 1
 fi
 
