@@ -1,11 +1,17 @@
 FROM python:3.13.7-alpine
 
+ENV UV_LINK_MODE=copy
+ENV UV_SYSTEM_PYTHON=1
+ENV UV_COMPILE_BYTECODE=1
+
 ENV DEVPICLIENT_CLIENTDIR=/devpi/client
 RUN mkdir -p $DEVPICLIENT_CLIENTDIR
 WORKDIR $DEVPICLIENT_CLIENTDIR
 
-COPY requirements.txt /requirements.txt
-RUN pip install --no-cache-dir -r /requirements.txt
+RUN --mount=from=ghcr.io/astral-sh/uv,source=/uv,target=/bin/uv \
+    --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=requirements.txt,target=requirements.txt \
+    uv pip install --system -r requirements.txt
 
 COPY entrypoint.sh /
 ENTRYPOINT [ "/entrypoint.sh" ]

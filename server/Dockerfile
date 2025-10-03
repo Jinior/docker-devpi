@@ -1,31 +1,17 @@
 FROM python:3.13.7-slim
 
+ENV UV_LINK_MODE=copy
+ENV UV_SYSTEM_PYTHON=1
+ENV UV_COMPILE_BYTECODE=1
+
 ENV DEVPISERVER_SERVERDIR=/devpi/server
 RUN mkdir -p $DEVPISERVER_SERVERDIR && \
     mkdir /entrypoint.d
 
-COPY requirements.txt /requirements.txt
-
-# Do a single run command to make the intermediary containers smaller.
-RUN set -ex && \
-# Install packages necessary during the build phase (for all architectures).
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
-            build-essential \
-            libffi8 \
-            libffi-dev \
-    && \
-# Install Python dependencies.
-    pip install --no-cache-dir -r /requirements.txt && \
-# Remove everything that is no longer necessary.
-    apt-get remove --purge -y \
-            build-essential \
-            libffi-dev \
-    && \
-    apt-get autoremove -y && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* && \
-    rm -rf /root/.cache
+RUN --mount=from=ghcr.io/astral-sh/uv,source=/uv,target=/bin/uv \
+    --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=requirements.txt,target=requirements.txt \
+    uv pip install --system -r requirements.txt
 
 COPY entrypoint.sh /
 ENTRYPOINT [ "/entrypoint.sh" ]

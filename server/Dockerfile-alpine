@@ -1,22 +1,17 @@
 FROM python:3.13.7-alpine
 
+ENV UV_LINK_MODE=copy
+ENV UV_SYSTEM_PYTHON=1
+ENV UV_COMPILE_BYTECODE=1
+
 ENV DEVPISERVER_SERVERDIR=/devpi/server
 RUN mkdir -p $DEVPISERVER_SERVERDIR && \
     mkdir /entrypoint.d
 
-COPY requirements.txt /requirements.txt
-RUN apk add --no-cache \
-        gcc \
-        musl-dev \
-        libffi \
-        libffi-dev \
-    && \
-    pip install --no-cache-dir -r /requirements.txt \
-    && \
-    apk del \
-        gcc \
-        musl-dev \
-        libffi-dev
+RUN --mount=from=ghcr.io/astral-sh/uv,source=/uv,target=/bin/uv \
+    --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=requirements.txt,target=requirements.txt \
+    uv pip install --system -r requirements.txt
 
 COPY entrypoint.sh /
 ENTRYPOINT [ "/entrypoint.sh" ]
